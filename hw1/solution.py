@@ -74,7 +74,7 @@ def think():
     global rank
 
     sleep_duration = np.random.randint(1, 6)
-    print(f'{" " * rank}Process {rank}: Thinking for {sleep_duration}s!', flush=True)
+    print(f'{"  " * rank}Process {rank}: Thinking for {sleep_duration}s!', flush=True)
     for i in range(sleep_duration):
         time.sleep(1.0)
         check_for_requests()
@@ -83,34 +83,34 @@ def think():
 def eat():
     global rank
     global left_fork, right_fork
-    print(f'{" " * rank}Process {rank}: eating!', flush=True)
+    print(f'{"  " * rank}Process {rank}: eating!', flush=True)
     left_fork.eat()
     right_fork.eat()
 
 
 def send_requests():
     global comm, rank
-    global REQUEST
+    global REQUEST_LEFT, REQUEST_RIGHT
     global left_fork, right_fork
     global left_neighbor, right_neighbor
     global my_requests
 
     if left_fork is None and not my_requests[0]:
-        comm.send(rank, dest=left_neighbor, tag=REQUEST)
+        comm.isend(rank, dest=left_neighbor, tag=REQUEST_RIGHT)
         my_requests[0] = True
-        print(f'{" " * rank}Process {rank}: Requesting left fork!', flush=True)
+        print(f'{"  " * rank}Process {rank}: Requesting left fork!', flush=True)
     if right_fork is None and not my_requests[1]:
-        comm.send(rank, dest=right_neighbor, tag=REQUEST)
+        comm.isend(rank, dest=right_neighbor, tag=REQUEST_LEFT)
         my_requests[1] = True
-        print(f'{" " * rank}Process {rank}: Requesting right fork!', flush=True)
+        print(f'{"  " * rank}Process {rank}: Requesting right fork!', flush=True)
 
 
 def send_left_fork():
-    global left_fork, left_neighbor, RECEIVE
+    global left_fork, left_neighbor, RECEIVE_LEFT, RECEIVE_RIGHT
 
     left_fork.clean()
-    print(f'{" " * rank}Process {rank}: SENDING my LEFT FORK!', flush=True)
-    comm.send(left_fork, dest=left_neighbor, tag=RECEIVE)
+    # print(f'{"    " * rank}Process {rank}: SENDING my LEFT FORK!', flush=True)
+    comm.isend(left_fork, dest=left_neighbor, tag=RECEIVE_LEFT)
     left_fork = None
 
 
@@ -118,9 +118,9 @@ def send_right_fork():
     global right_fork, right_neighbor, RECEIVE
 
     right_fork.clean()
-    print(f'{" " * rank}Process {rank}: SENDING my RIGHT FORK!', flush=True)
+    # print(f'{"    " * rank}Process {rank}: SENDING my RIGHT FORK!', flush=True)
 
-    comm.send(right_fork, dest=right_neighbor, tag=RECEIVE)
+    comm.isend(right_fork, dest=right_neighbor, tag=RECEIVE_RIGHT)
     right_fork = None
 
 
@@ -128,12 +128,12 @@ def check_for_requests():
     global comm, rank
     global left_neighbor, right_neighbor
     global left_fork, right_fork
-    global REQUEST, RECEIVE
+    global REQUEST_LEFT, REQUEST_RIGHT, RECEIVE_LEFT, RECEIVE_RIGHT
     global outstanding_requests
 
-    if comm.Iprobe(source=left_neighbor, tag=REQUEST):
-        # print(f'{" " * rank}Process {rank}: got a REQUEST for my LEFT FORK!', flush=True)
-        comm.recv(source=left_neighbor, tag=REQUEST)
+    if comm.Iprobe(source=left_neighbor, tag=REQUEST_LEFT):
+        # print(f'{"    " * rank}Process {rank}: got a REQUEST for my LEFT FORK!', flush=True)
+        comm.recv(source=left_neighbor, tag=REQUEST_LEFT)
         if left_fork is not None:
             if left_fork.is_dirty():
                 send_left_fork()
@@ -142,9 +142,9 @@ def check_for_requests():
         else:
             outstanding_requests[0] = True
 
-    if comm.Iprobe(source=right_neighbor, tag=REQUEST):
-        # print(f'{" " * rank}Process {rank}: got a REQUEST for my RIGHT FORK!', flush=True)
-        comm.recv(source=right_neighbor, tag=REQUEST)
+    if comm.Iprobe(source=right_neighbor, tag=REQUEST_RIGHT):
+        # print(f'{"    " * rank}Process {rank}: got a REQUEST for my RIGHT FORK!', flush=True)
+        comm.recv(source=right_neighbor, tag=REQUEST_RIGHT)
         if right_fork is not None:
             if right_fork.is_dirty():
                 send_right_fork()
@@ -158,20 +158,20 @@ def check_for_receive():
     global comm
     global left_neighbor, right_neighbor
     global left_fork, right_fork
-    global REQUEST, RECEIVE
+    global REQUEST_LEFT, REQUEST_RIGHT, RECEIVE_LEFT, RECEIVE_RIGHT
     global my_requests
 
-    # print(f'{" " * rank}Process {rank}: checking for left fork!', flush=True)
-    if comm.Iprobe(source=left_neighbor, tag=RECEIVE):
-        left_fork = comm.recv(source=left_neighbor, tag=RECEIVE)
+    # print(f'{"    " * rank}Process {rank}: checking for left fork!', flush=True)
+    if comm.Iprobe(source=left_neighbor, tag=RECEIVE_RIGHT):
+        left_fork = comm.recv(source=left_neighbor, tag=RECEIVE_RIGHT)
         my_requests[0] = False
-        print(f'{" " * rank}Process {rank}: got my left fork!', flush=True)
+        # print(f'{" " * rank}Process {rank}: got my left fork!', flush=True)
 
-    # print(f'{" " * rank}Process {rank}: checking for right fork!', flush=True)
-    if comm.Iprobe(source=right_neighbor, tag=RECEIVE):
-        right_fork = comm.recv(source=right_neighbor, tag=RECEIVE)
+    # print(f'{"    " * rank}Process {rank}: checking for right fork!', flush=True)
+    if comm.Iprobe(source=right_neighbor, tag=RECEIVE_LEFT):
+        right_fork = comm.recv(source=right_neighbor, tag=RECEIVE_LEFT)
         my_requests[1] = False
-        print(f'{" " * rank}Process {rank}: got my right fork!', flush=True)
+        # print(f'{"    " * rank}Process {rank}: got my right fork!', flush=True)
 
 
 def deal_with_backlog():
@@ -189,8 +189,10 @@ comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 size = comm.Get_size()
 
-REQUEST = 0
-RECEIVE = 1
+REQUEST_LEFT = 0
+REQUEST_RIGHT = 1
+RECEIVE_LEFT = 2
+RECEIVE_RIGHT = 3
 
 left_fork, right_fork = init_forks(rank, size)
 left_neighbor, right_neighbor = init_neighbors(rank, size)
@@ -203,6 +205,6 @@ while True:
         send_requests()
         check_for_receive()
         check_for_requests()
-
+        # print(f'{"    " * rank}Process {rank}: end loop!', flush=True)
     eat()
     deal_with_backlog()
