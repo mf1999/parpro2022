@@ -9,7 +9,7 @@ from mpi4py import MPI
 import sys
 import time
 from board import Board
-from itertools import product
+import itertools
 
 ILLEGAL_MOVE = 100
 NO_WINNER = 101
@@ -17,7 +17,7 @@ WINNER = 102
 
 REQUEST_TASK = 201
 RECEIVE_TASK = 202
-
+RESULT_PACKAGE = 203
 
 def init_empty_tree(depth):
     tree = []
@@ -35,33 +35,83 @@ def master(comm, rank):
         depth = int(sys.argv[1])
 
     board = Board(6, 7)
+    combos = []
+    for d in range(1, depth + 1):
+        products = list(itertools.product(range(7), repeat=d))
+        for p in products:
+            combos.append(list(p))
+
     root = init_empty_tree(depth)
     root.set_board(board)
-    combinations = product(range(7), repeat=depth)
-    for UID in combinations:
-        task_package = [board.get_deepcopy(), ]
+
+    # root.render(0)
+    # for c in combos:
+    #     print(c)
+    start = time.time()
+    while len(combos) > 0:
+
+        received_data = comm.recv(source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG)
+        if isinstance(received_data, int):
+            worker_id = received_data
+
+            board_copy = Board(6, 7)
+            board_copy.set_board(board.get_board_deepcopy())
+            board_copy.set_col_full(board.get_col_full_deepcopy())
+
+            task_package = [board_copy, 2, combos.pop()]
+            comm.send(task_package, dest=worker_id, tag=RECEIVE_TASK)
+        else:
+            final_result, UID = received_data
+            if final_result != 0:
+                print(UID, flush=True)
+            root.write_result(final_result, UID)
+
+
+    end = time.time()
+    print(f"All tasks done: {end-start}s", flush=True)
+
+    # root.render(0)
 
 
 def worker(comm, rank):
-    rank = comm.Get_rank()
+    def switch_marker(marker):
+        if marker == 1:
+            return 2
+        return 1
+
     print(f"Hello from worker # {rank}", flush=True)
 
     while True:
-        comm.isend(None, dest=0, tag=REQUEST_TASK)
+        comm.send(rank, dest=0, tag=REQUEST_TASK)
 
-        while not comm.Iprobe(source=0, tag=RECEIVE_TASK):
-            pass
+        # while not comm.Iprobe(source=0, tag=RECEIVE_TASK):
+        #    pass
 
         task_package = comm.recv(source=0, tag=RECEIVE_TASK)
-        board = Board(task_package[0])
-        col = task_package[1]
-        marker = task_package[2]
-        UID = task_package[3]
+        board = task_package[0]
+        marker = task_package[1]
+        UID = task_package[2]
 
-        result = board.play(col, marker)
+        final_result = None
+        for i in range(len(UID)):
+            result = board.play(UID[i], marker)
+            # played_moves.append(UID[i])
+            if result == ILLEGAL_MOVE:
+                final_result = ILLEGAL_MOVE
+                break
+            elif result == NO_WINNER:
+                final_result = 0
+                marker = switch_marker(marker)
+                # kad nema pobjednika
+            elif result == WINNER:
+                if marker == 1:
+                    final_result = -1
+                else:
+                    marker = +1
+                break
 
-        result_package = [board, result, UID]
-        comm.isend(result_package, dest=0)
+        result_package = [final_result, UID]
+        comm.send(result_package, dest=0, tag=RESULT_PACKAGE)
 
 
 def main():

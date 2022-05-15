@@ -32,7 +32,7 @@ class Node:
         return self.children
 
     def render(self, level):
-        print(f"{' ' * level}{self}", flush=True)
+        print(f"{' ' * level}{self.value}", flush=True)
         for child in self.children:
             child.render(level + 1)
 
@@ -45,7 +45,7 @@ class Node:
 
     def write_result(self, result, UID):
         if len(UID) > 1:
-            return self.children[UID.pop(0)].write_result(UID)
+            return self.children[UID.pop(0)].write_result(result, UID)
         else:
             self.children[UID[0]].set_value(result)
             return True
