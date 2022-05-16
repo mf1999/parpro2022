@@ -1,3 +1,6 @@
+ILLEGAL_MOVE = 100
+
+
 class Node:
     def __init__(self, parent):
 
@@ -43,9 +46,44 @@ class Node:
             tmp = Node(self)
             tmp.init_own_children(stop_depth, curr_depth + 1)
 
-    def write_result(self, result, UID):
+    def write_results(self, results, UID):
         if len(UID) > 1:
-            return self.children[UID.pop(0)].write_result(result, UID)
+            child_idx = UID.pop(0)
+            self.children[child_idx].set_value(results.pop(0))
+            return self.children[child_idx].write_results(results, UID)
         else:
-            self.children[UID[0]].set_value(result)
+            self.children[UID[0]].set_value(results[0])
             return True
+
+    def run_heuristic(self, depth):
+        if self.value == 1:
+            pass
+        elif self.value == -1:
+            pass
+        elif self.value == ILLEGAL_MOVE:
+            pass
+        else:# self.value == 0:
+            if len(self.children) == 0:
+                pass
+            else:
+                ctr_legal = 0
+                for child in self.children:
+                    child.run_heuristic(depth + 1)
+                    if child.get_value() != ILLEGAL_MOVE:
+                        ctr_legal += 1
+                        if depth % 2 == 1:
+                            #CPU MOVE
+                            if child.get_value() == -1:
+                                self.value = -1
+                                return
+                            else:
+                                self.value += child.get_value()
+                        else:
+                            if child.get_value() == 1:
+                                self.value = 1
+                                return
+                            else:
+                                self.value += child.get_value()
+                if self.value != 0:
+                    self.value = self.value / ctr_legal
+
