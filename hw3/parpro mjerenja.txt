@@ -1,0 +1,75 @@
+1.
+First 32768 numbers have 3513 primes.
+==12784== Profiling application: primes.exe
+==12784== Profiling result:
+            Type  Time(%)      Time     Calls       Avg       Min       Max  Name
+ GPU activities:   99.98%  9.8443ms         1  9.8443ms  9.8443ms  9.8443ms  check(int, int*)
+                    0.01%  1.2480us         1  1.2480us  1.2480us  1.2480us  [CUDA memset]
+                    0.01%     576ns         1     576ns     576ns     576ns  [CUDA memcpy DtoH]
+      API calls:   86.36%  151.09ms         1  151.09ms  151.09ms  151.09ms  cudaMalloc
+                    7.45%  13.039ms         1  13.039ms  13.039ms  13.039ms  cuDevicePrimaryCtxRelease
+                    5.71%  9.9846ms         1  9.9846ms  9.9846ms  9.9846ms  cudaDeviceSynchronize
+                    0.37%  653.10us         1  653.10us  653.10us  653.10us  cuModuleUnload
+                    0.05%  80.100us         1  80.100us  80.100us  80.100us  cudaMemcpy
+                    0.03%  45.100us         1  45.100us  45.100us  45.100us  cudaLaunchKernel
+                    0.02%  26.300us         1  26.300us  26.300us  26.300us  cudaMemset
+                    0.01%  15.800us       101     156ns     100ns     800ns  cuDeviceGetAttribute
+                    0.00%  4.3000us         3  1.4330us     200ns  3.9000us  cuDeviceGetCount
+                    0.00%  2.4000us         1  2.4000us  2.4000us  2.4000us  cuDeviceGetName
+                    0.00%  2.0000us         2  1.0000us     200ns  1.8000us  cuDeviceGet
+                    0.00%     500ns         1     500ns     500ns     500ns  cuModuleGetLoadingMode
+                    0.00%     500ns         1     500ns     500ns     500ns  cuDeviceGetLuid
+                    0.00%     300ns         1     300ns     300ns     300ns  cuDeviceTotalMem
+                    0.00%     100ns         1     100ns     100ns     100ns  cuDeviceGetUuid
+
+
+2.
+Enter the number of intervals: (0 quits) 10000000
+==11584== NVPROF is profiling process 11584, command: pi.exe
+Pi is approximately 3.1415924535891246, Error is 0.0000002000006685
+==11584== Profiling application: pi.exe
+==11584== Profiling result:
+            Type  Time(%)      Time     Calls       Avg       Min       Max  Name
+ GPU activities:   99.99%  20.438ms         1  20.438ms  20.438ms  20.438ms  do_sum(int, double*)
+                    0.01%  1.2480us         1  1.2480us  1.2480us  1.2480us  [CUDA memset]
+                    0.00%     576ns         1     576ns     576ns     576ns  [CUDA memcpy DtoH]
+      API calls:   78.87%  137.12ms         1  137.12ms  137.12ms  137.12ms  cudaMallocManaged
+                   11.78%  20.473ms         1  20.473ms  20.473ms  20.473ms  cudaDeviceSynchronize
+                    9.11%  15.833ms         1  15.833ms  15.833ms  15.833ms  cuDevicePrimaryCtxRelease
+                    0.10%  173.60us         1  173.60us  173.60us  173.60us  cudaFree
+                    0.05%  90.600us         1  90.600us  90.600us  90.600us  cudaMemset
+                    0.04%  77.000us         1  77.000us  77.000us  77.000us  cudaMemcpy
+                    0.02%  37.600us         1  37.600us  37.600us  37.600us  cudaLaunchKernel
+                    0.01%  22.300us         1  22.300us  22.300us  22.300us  cuModuleUnload
+                    0.01%  14.700us       101     145ns     100ns     900ns  cuDeviceGetAttribute
+                    0.00%  4.5000us         3  1.5000us     200ns  4.0000us  cuDeviceGetCount
+                    0.00%  2.2000us         1  2.2000us  2.2000us  2.2000us  cuDeviceGetName
+                    0.00%  1.7000us         2     850ns     100ns  1.6000us  cuDeviceGet
+                    0.00%     500ns         1     500ns     500ns     500ns  cuModuleGetLoadingMode
+                    0.00%     500ns         1     500ns     500ns     500ns  cuDeviceTotalMem
+                    0.00%     300ns         1     300ns     300ns     300ns  cuDeviceGetLuid
+                    0.00%     100ns         1     100ns     100ns     100ns  cuDeviceGetUuid
+
+
+3.
+Scale Factor = 100, iterations = 1000
+Irrotational flow
+Running CFD on 3200 x 3200 grid in serial
+==13344== NVPROF is profiling process 13344, command: cfd.exe 100 1000
+bnorm: 29720.926971
+
+Starting main loop...
+
+err sqrt: 0.036318
+Completed iteration 1000
+
+... finished
+After 1000 iterations, the error is 1.22196e-06
+Time for 1000 iterations was 6.29333 seconds
+Each iteration took 0.00629333 seconds
+==13344== Profiling application: cfd.exe 100 1000
+==13344== Profiling result:
+No kernels were profiled.
+No API activities were profiled.
+==13344== Warning: Some profiling data are not recorded.
+======== Error: Application returned non-zero code -1073741819
